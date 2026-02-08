@@ -66,11 +66,8 @@ export default function DashboardPage() {
               const wsId = workspaces[0].id;
               setWorkspaceId(wsId);
               localStorage.setItem("current_workspace_id", wsId);
-            } else {
-              // No workspace found - redirect to create workspace
-              router.push("/dashboard/workspaces/create");
-              return;
             }
+            // No redirect if no workspace - allow personal tasks
           }
         } catch (error) {
           console.error("Failed to fetch workspace:", error);
@@ -143,18 +140,28 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <LayoutDashboard className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <LayoutDashboard className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Dashboard
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Welcome back, {user.email}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Dashboard
-                </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Welcome back, {user.email}
-                </p>
-              </div>
+              {!workspaceId && (
+                <Link
+                  href="/dashboard/workspaces/create"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg shadow-lg transition-all font-semibold text-sm"
+                >
+                  + Create Workspace
+                </Link>
+              )}
             </div>
           </div>
         </div>

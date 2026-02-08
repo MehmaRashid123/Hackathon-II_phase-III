@@ -74,16 +74,24 @@ export default function ActivityPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200/50 p-8 text-center max-w-md">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Workspace Found</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Workspace Optional</h2>
           <p className="text-gray-600 mb-6">
-            Please create a workspace to view activity feed.
+            Activity feed is available for workspace tasks. Use personal tasks or create a workspace.
           </p>
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all font-semibold"
-          >
-            Go to Dashboard
-          </button>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => router.push("/dashboard/tasks")}
+              className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl shadow-lg transition-all font-semibold"
+            >
+              Use Personal Tasks
+            </button>
+            <button
+              onClick={() => router.push("/dashboard/workspaces/create")}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all font-semibold"
+            >
+              Create Workspace
+            </button>
+          </div>
         </div>
       </div>
     );
