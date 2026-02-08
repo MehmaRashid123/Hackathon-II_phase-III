@@ -8,7 +8,7 @@ export interface Task {
   description: string | null;
   priority: TaskPriority;
   status: TaskStatus;
-  workspace_id: string;
+  workspace_id: string | null; // Nullable for personal tasks
   project_id: string | null;
   created_by: string;
   assigned_to: string | null;
