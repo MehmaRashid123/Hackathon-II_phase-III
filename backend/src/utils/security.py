@@ -38,10 +38,22 @@ def hash_password(password: str) -> str:
         >>> len(hashed)
         60
     """
-    # Pre-hash with SHA256 to handle long passwords (bcrypt has 72 byte limit)
-    if len(password.encode('utf-8')) > 72:
-        password = hashlib.sha256(password.encode('utf-8')).hexdigest()
-    return pwd_context.hash(password)
+    try:
+        # Always handle bcrypt's 72 byte limit
+        password_bytes = password.encode('utf-8')
+        
+        if len(password_bytes) > 72:
+            # Use SHA256 for very long passwords
+            password = hashlib.sha256(password_bytes).hexdigest()
+        else:
+            # Safely truncate to 72 bytes
+            password = password_bytes[:72].decode('utf-8', errors='ignore')
+        
+        return pwd_context.hash(password)
+    except Exception as e:
+        # Log error and re-raise with clear message
+        print(f"❌ Password hashing error: {str(e)}")
+        raise ValueError(f"Failed to hash password: {str(e)}")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -62,10 +74,22 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         >>> verify_password("wrongPassword", hashed)
         False
     """
-    # Pre-hash with SHA256 to handle long passwords (bcrypt has 72 byte limit)
-    if len(plain_password.encode('utf-8')) > 72:
-        plain_password = hashlib.sha256(plain_password.encode('utf-8')).hexdigest()
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        # Always handle bcrypt's 72 byte limit
+        password_bytes = plain_password.encode('utf-8')
+        
+        if len(password_bytes) > 72:
+            # Use SHA256 for very long passwords
+            plain_password = hashlib.sha256(password_bytes).hexdigest()
+        else:
+            # Safely truncate to 72 bytes
+            plain_password = password_bytes[:72].decode('utf-8', errors='ignore')
+        
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        # Log error and return False (invalid password)
+        print(f"❌ Password verification error: {str(e)}")
+        return False
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

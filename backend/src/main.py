@@ -8,9 +8,11 @@ This module initializes the FastAPI application with:
 - OpenAPI documentation
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+import traceback
 
 from src.config import settings
 from src.database import create_db_and_tables
@@ -60,6 +62,27 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods (GET, POST, PUT, DELETE, PATCH)
     allow_headers=["*"],  # Allow all headers including Authorization
 )
+
+
+# Global exception handler to ensure JSON responses
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Catch all unhandled exceptions and return proper JSON response.
+    """
+    error_detail = str(exc)
+    
+    # Log the full traceback for debugging
+    print(f"❌ Unhandled exception: {error_detail}")
+    print(traceback.format_exc())
+    
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "detail": f"Internal server error: {error_detail}",
+            "type": "internal_error"
+        }
+    )
 
 
 @app.get("/", tags=["Health"])
