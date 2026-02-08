@@ -29,13 +29,13 @@ export default function ActivityPage() {
     } else {
       const fetchWorkspace = async () => {
         try {
-          const token = localStorage.getItem("token");
+          const token = localStorage.getItem("access_token");
           if (!token) {
             router.push("/login");
             return;
           }
 
-          const response = await fetch("http://localhost:8000/workspaces", {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/workspaces`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 

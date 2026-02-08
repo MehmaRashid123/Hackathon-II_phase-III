@@ -9,9 +9,10 @@ import { Task, TaskCreateInput, TaskUpdateInput } from "../types/task";
 
 export const taskApi = {
   /**
-   * Get all tasks for current workspace.
+   * Get all tasks (workspace or personal).
    *
-   * GET /api/workspaces/{workspace_id}/tasks
+   * GET /api/workspaces/{workspace_id}/tasks (if workspace provided)
+   * GET /api/{user_id}/tasks (if no workspace - personal tasks)
    */
   async list(workspaceId?: string): Promise<Task[]> {
     if (!workspaceId) {
@@ -21,38 +22,52 @@ export const taskApi = {
       }
     }
     
-    if (!workspaceId) {
-      // Return empty array if no workspace selected
-      console.warn("No workspace selected, returning empty task list");
-      return [];
-    }
-
-    try {
-      return await apiClient.get<Task[]>(`/api/workspaces/${workspaceId}/tasks`);
-    } catch (error) {
-      // If workspace not found or invalid, return empty array
-      console.error("Failed to fetch tasks:", error);
-      return [];
+    if (workspaceId) {
+      // Workspace tasks
+      try {
+        return await apiClient.get<Task[]>(`/api/workspaces/${workspaceId}/tasks`);
+      } catch (error) {
+        console.error("Failed to fetch workspace tasks:", error);
+        return [];
+      }
+    } else {
+      // Personal tasks (no workspace)
+      try {
+        const userId = apiClient.getUserId();
+        if (!userId) {
+          console.warn("No user ID found, returning empty task list");
+          return [];
+        }
+        return await apiClient.get<Task[]>(`/api/${userId}/tasks`);
+      } catch (error) {
+        console.error("Failed to fetch personal tasks:", error);
+        return [];
+      }
     }
   },
 
   /**
-   * Create a new task in workspace.
+   * Create a new task (workspace or personal).
    *
-   * POST /api/{user_id}/tasks (old endpoint for backward compatibility)
+   * POST /api/workspaces/{workspace_id}/tasks (if workspace provided)
+   * POST /api/{user_id}/tasks (if no workspace - personal task)
    */
   async create(data: TaskCreateInput, workspaceId?: string): Promise<Task> {
-    // Get workspace ID
+    // Get workspace ID if not provided
     if (!workspaceId && typeof window !== "undefined") {
       workspaceId = localStorage.getItem("current_workspace_id") || undefined;
     }
     
-    if (!workspaceId) {
-      throw new Error("No workspace selected. Please select a workspace first.");
+    if (workspaceId) {
+      // Create workspace task
+      return apiClient.post<Task>(`/api/workspaces/${workspaceId}/tasks`, data);
+    } else {
+      // Create personal task (no workspace)
+      const userId = apiClient.getUserId();
+      if (!userId) throw new Error("User not authenticated");
+      
+      return apiClient.post<Task>(`/api/${userId}/tasks`, data);
     }
-
-    // Use workspace-based endpoint
-    return apiClient.post<Task>(`/api/workspaces/${workspaceId}/tasks`, data);
   },
 
   /**
