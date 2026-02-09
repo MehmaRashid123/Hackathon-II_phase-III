@@ -6,7 +6,7 @@
 export interface ToolCall {
   tool_name: string;
   parameters: Record<string, any>;
-  result?: string;
+  result?: Record<string, any> | string;
 }
 
 export type MessageRole = "user" | "assistant" | "system";
