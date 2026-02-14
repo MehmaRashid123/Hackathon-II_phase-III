@@ -404,3 +404,50 @@ class TaskService:
         session.refresh(task)
         
         return task
+    
+    @staticmethod
+    def toggle_task_completion(
+        session: Session,
+        user_id: str,
+        task_id: str
+    ) -> Task:
+        """
+        Toggle task completion status (for personal tasks).
+        
+        Args:
+            session: Database session
+            user_id: User UUID as string
+            task_id: Task UUID as string
+        
+        Returns:
+            Updated Task object with toggled status
+        
+        Raises:
+            HTTPException: If task not found or doesn't belong to user
+        """
+        from fastapi import HTTPException, status as http_status
+        
+        task = TaskService.get_task_by_id(session, task_id, user_id)
+        
+        if not task:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Task not found"
+            )
+        
+        # Toggle status between DONE and TO_DO
+        if task.status == TaskStatus.DONE:
+            task.status = TaskStatus.TO_DO
+            task.completed_at = None
+        else:
+            task.status = TaskStatus.DONE
+            task.completed_at = datetime.utcnow()
+        
+        # Update timestamp
+        task.updated_at = datetime.utcnow()
+        
+        session.add(task)
+        session.commit()
+        session.refresh(task)
+        
+        return task
