@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronFirst, ChevronLast, LayoutDashboard, ListTodo, Columns3, ChartBar, Activity, Briefcase, MessageSquare } from 'lucide-react';
+import { ChevronFirst, ChevronLast, LayoutDashboard, ListTodo, Columns3, ChartBar, Activity, Briefcase, MessageSquare, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (isOpen: boolean) => void }) {
@@ -31,6 +31,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (is
     { href: '/dashboard/ai-assistant', icon: MessageSquare, label: 'AI Assistant' },
     { href: '/dashboard/analytics', icon: ChartBar, label: 'Analytics' },
     { href: '/dashboard/activity', icon: Activity, label: 'Activity' },
+    { href: '/dashboard/billing', icon: CreditCard, label: 'Billing' },
   ];
 
   return (

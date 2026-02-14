@@ -43,6 +43,12 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "models/gemini-2.0-flash"  # Gemini 2.0 Flash - fast and versatile
     GEMINI_MAX_TOKENS: int = 4000
     GEMINI_TEMPERATURE: float = 0.7
+    
+    # Groq Configuration (Free & Fast Alternative)
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"  # Fast and capable
+    GROQ_MAX_TOKENS: int = 4000
+    GROQ_TEMPERATURE: float = 0.7
 
     class Config:
         env_file = ".env"

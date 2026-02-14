@@ -14,6 +14,7 @@ from src.config import settings
 from src.agents.context import AgentContext
 from src.agents.system_instructions import get_system_instructions
 from src.agents.tool_definitions import get_all_tools, get_tool_by_name
+from src.agents.tool_executors import get_tool_function
 from src.schemas.chat import ToolCall
 
 
@@ -124,9 +125,9 @@ class TodoAssistant:
     
     async def process_message(
         self,
+        message: str,
         context: AgentContext,
-        user_message: str,
-        mcp_client
+        conversation_history: List[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Process a user message through Gemini with tool execution.
@@ -134,13 +135,13 @@ class TodoAssistant:
         This method:
         1. Builds conversation history from context
         2. Sends message to Gemini
-        3. Detects and executes any tool calls via MCP client
+        3. Detects and executes any tool calls
         4. Returns final agent response and tool call details
         
         Args:
+            message: The user's message to process
             context: Agent context with conversation history
-            user_message: The user's message to process
-            mcp_client: MCP client for executing tool calls
+            conversation_history: Previous messages in conversation (optional)
             
         Returns:
             Dict with 'message' and 'tool_calls' keys
@@ -155,15 +156,18 @@ class TodoAssistant:
                 f"{len(context.available_tools)} tools"
             )
             
+            # Use provided conversation_history or context's history
+            history_to_use = conversation_history or context.conversation_history
+            
             # Build conversation history for Gemini
-            history = self._build_gemini_history(context)
+            history = self._build_gemini_history_from_list(history_to_use)
             
             # Start chat session with history
             chat = self.model.start_chat(history=history)
             
             # Send message and get response
             response = chat.send_message(
-                user_message,
+                message,
                 generation_config=genai.types.GenerationConfig(
                     max_output_tokens=self.max_tokens,
                     temperature=self.temperature
@@ -179,9 +183,9 @@ class TodoAssistant:
                         # Execute the function call
                         function_call = part.function_call
                         tool_call = await self._execute_tool_call(
+                            context,
                             function_call.name,
-                            dict(function_call.args),
-                            mcp_client
+                            dict(function_call.args)
                         )
                         tool_calls_executed.append(tool_call)
                         
@@ -236,6 +240,28 @@ class TodoAssistant:
             logger.error(f"Error processing message: {str(e)}", exc_info=True)
             raise AgentProcessingError(f"Failed to process message: {str(e)}") from e
     
+    def _build_gemini_history_from_list(self, conversation_history: List[Dict[str, str]]) -> List[Dict]:
+        """
+        Build conversation history in Gemini format from a list of messages.
+        
+        Args:
+            conversation_history: List of conversation messages
+            
+        Returns:
+            List of Gemini-formatted messages
+        """
+        history = []
+        
+        # Convert conversation history to Gemini format
+        for msg in conversation_history:
+            role = "user" if msg["role"] == "user" else "model"
+            history.append({
+                "role": role,
+                "parts": [msg["content"]]
+            })
+        
+        return history
+    
     def _build_gemini_history(self, context: AgentContext) -> List[Dict]:
         """
         Build conversation history in Gemini format.
@@ -246,31 +272,23 @@ class TodoAssistant:
         Returns:
             List of Gemini-formatted messages
         """
-        history = []
-        
-        # Convert conversation history to Gemini format
-        for msg in context.conversation_history:
-            role = "user" if msg["role"] == "user" else "model"
-            history.append({
-                "role": role,
-                "parts": [msg["content"]]
-            })
+        return self._build_gemini_history_from_list(context.conversation_history)
         
         return history
     
     async def _execute_tool_call(
         self,
+        context: AgentContext,
         tool_name: str,
-        arguments: Dict[str, Any],
-        mcp_client
+        arguments: Dict[str, Any]
     ) -> ToolCall:
         """
-        Execute a tool call via the MCP client.
+        Execute a tool call using tool executors.
         
         Args:
+            context: Agent context with user info
             tool_name: Name of the tool to execute
             arguments: Tool arguments from Gemini
-            mcp_client: MCP client for executing tools
             
         Returns:
             ToolCall object with execution results
@@ -287,29 +305,11 @@ class TodoAssistant:
             logger.error(f"Unknown tool: {tool_name}")
             raise ValueError(f"Unknown tool: {tool_name}") from e
         
-        # Execute tool via MCP client
+        # Execute tool via tool executors
         try:
-            if tool_name == "add_task":
-                result = await mcp_client.add_task(
-                    title=arguments["title"],
-                    description=arguments.get("description", "")
-                )
-            elif tool_name == "list_tasks":
-                result = await mcp_client.list_tasks()
-            elif tool_name == "complete_task":
-                result = await mcp_client.complete_task(
-                    task_id=arguments["task_id"]
-                )
-            elif tool_name == "delete_task":
-                result = await mcp_client.delete_task(
-                    task_id=arguments["task_id"]
-                )
-            elif tool_name == "update_task":
-                result = await mcp_client.update_task(
-                    task_id=arguments["task_id"],
-                    title=arguments.get("title"),
-                    description=arguments.get("description")
-                )
+            tool_func = get_tool_function(tool_name)
+            if tool_func:
+                result = await tool_func(context, **arguments)
             else:
                 raise ValueError(f"Tool {tool_name} not implemented")
             

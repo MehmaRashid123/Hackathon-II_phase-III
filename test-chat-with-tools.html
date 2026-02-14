@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chat with Tools</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user {
+            background-color: #e3f2fd;
+            text-align: right;
+        }
+        .assistant {
+            background-color: #f5f5f5;
+        }
+        .tool-call {
+            background-color: #fff3e0;
+            margin: 5px 0;
+            padding: 5px;
+            font-size: 0.9em;
+            border-left: 3px solid #ff9800;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+        }
+        input {
+            width: 60%;
+        }
+        #output {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chat with Tools Test</h1>
+    
+    <div>
+        <input type="text" id="messageInput" placeholder="Type your message..." />
+        <button onclick="sendMessage()">Send</button>
+        <button onclick="clearChat()">Clear</button>
+    </div>
+    
+    <div id="output"></div>
+    
+    <script>
+        let conversationId = null;
+        const userId = '550e8400-e29b-41d4-a716-446655440000'; // Test user ID
+        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJleHAiOjE3NzEwODAwMDB9.test'; // Test token
+        
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Display user message
+            addMessage('user', message);
+            input.value = '';
+            
+            try {
+                const response = await fetch(`http://localhost:8000/api/${userId}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        conversation_id: conversationId
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    addMessage('error', `Error: ${error.detail || response.statusText}`);
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                // Update conversation ID
+                if (data.conversation_id) {
+                    conversationId = data.conversation_id;
+                }
+                
+                // Display assistant message
+                addMessage('assistant', data.message);
+                
+                // Display tool calls if any
+                if (data.tool_calls && data.tool_calls.length > 0) {
+                    data.tool_calls.forEach(tc => {
+                        addToolCall(tc);
+                    });
+                }
+                
+            } catch (error) {
+                addMessage('error', `Network error: ${error.message}`);
+            }
+        }
+        
+        function addMessage(role, content) {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            div.textContent = content;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function addToolCall(toolCall) {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = 'tool-call';
+            div.innerHTML = `
+                <strong>🔧 Tool: ${toolCall.tool_name}</strong><br>
+                Parameters: ${JSON.stringify(toolCall.parameters)}<br>
+                Result: ${JSON.stringify(toolCall.result)}
+            `;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearChat() {
+            document.getElementById('output').innerHTML = '';
+            conversationId = null;
+        }
+        
+        // Allow Enter key to send
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

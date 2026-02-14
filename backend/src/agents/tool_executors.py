@@ -8,11 +8,13 @@ for the AI assistant.
 import logging
 from typing import Dict, Any
 from uuid import UUID
+from datetime import datetime
 
 from src.agents.context import AgentContext
 from src.services.task_service import TaskService
 from src.core.database import Session, engine
 from src.models.user import User
+from src.models.task import TaskStatus
 
 logger = logging.getLogger(__name__)
 
@@ -117,8 +119,9 @@ async def complete_task(context: AgentContext, task_id: str) -> Dict[str, Any]:
             if not task:
                 return {"error": "Task not found"}
             
-            # Update task status
-            task.status = "completed"
+            # Update task status to DONE
+            task.status = TaskStatus.DONE
+            task.completed_at = datetime.utcnow()
             session.add(task)
             session.commit()
             session.refresh(task)

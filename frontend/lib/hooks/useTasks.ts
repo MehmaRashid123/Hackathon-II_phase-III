@@ -61,13 +61,14 @@ export function useTasks(workspaceId?: string) {
       
       const data = await taskApi.list(targetWorkspaceId);
 
-      // Load saved statuses from localStorage (for Kanban sync)
+      // Database status has priority over localStorage
+      // Only use localStorage if database status is missing
       const savedStatuses = loadSavedStatuses();
 
-      // Merge with saved statuses
+      // Use database status, fallback to localStorage only if needed
       const tasksWithStatus = data.map(task => ({
         ...task,
-        status: savedStatuses[task.id] || task.status || (task.is_completed ? "DONE" : "TO_DO")
+        status: task.status || savedStatuses[task.id] || (task.is_completed ? "DONE" : "TO_DO")
       }));
 
       setTasks(tasksWithStatus);

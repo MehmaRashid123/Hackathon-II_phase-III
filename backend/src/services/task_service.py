@@ -319,7 +319,8 @@ class TaskService:
             title=title,
             description=description,
             created_by=user_uuid,
-            status=TaskStatus.TODO,
+            user_id=user_uuid,  # Add user_id for compatibility
+            status=TaskStatus.TO_DO,
             priority=TaskPriority.MEDIUM
         )
         
@@ -356,3 +357,50 @@ class TaskService:
         )
         
         return session.exec(statement).first()
+    
+    @staticmethod
+    def update_task_simple(
+        session: Session,
+        user_id: str,
+        task_id: str,
+        update_data: "TaskUpdate"
+    ) -> Task:
+        """
+        Update a personal task (for personal tasks without workspace).
+        
+        Args:
+            session: Database session
+            user_id: User UUID as string
+            task_id: Task UUID as string
+            update_data: TaskUpdate schema with fields to update
+        
+        Returns:
+            Updated Task object
+        
+        Raises:
+            HTTPException: If task not found or doesn't belong to user
+        """
+        from fastapi import HTTPException, status as http_status
+        
+        task = TaskService.get_task_by_id(session, task_id, user_id)
+        
+        if not task:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Task not found"
+            )
+        
+        # Update fields from update_data
+        update_dict = update_data.model_dump(exclude_unset=True)
+        for field, value in update_dict.items():
+            setattr(task, field, value)
+        
+        # Update timestamp
+        from datetime import datetime
+        task.updated_at = datetime.utcnow()
+        
+        session.add(task)
+        session.commit()
+        session.refresh(task)
+        
+        return task

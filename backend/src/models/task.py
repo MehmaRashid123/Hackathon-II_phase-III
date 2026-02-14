@@ -89,6 +89,15 @@ class Task(SQLModel, table=True):
         index=True,
         description="User who created this task"
     )
+    
+    # Legacy field for backward compatibility
+    user_id: uuid.UUID = Field(
+        foreign_key="users.id",
+        nullable=False,
+        index=True,
+        description="User ID (same as created_by for compatibility)"
+    )
+    
     assigned_to: Optional[uuid.UUID] = Field(
         default=None,
         foreign_key="users.id",

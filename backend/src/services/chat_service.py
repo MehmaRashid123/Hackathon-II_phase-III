@@ -14,7 +14,7 @@ from src.schemas.chat import ChatRequest, ChatResponse, ToolCall
 from src.agents.context import AgentContext
 from src.agents.system_instructions import get_system_instructions
 from src.agents.tool_definitions import get_all_tools
-from src.agents.openrouter_assistant import OpenRouterAssistant, AgentError
+from src.agents.groq_assistant import GroqAssistant, AgentError
 from src.services.conversation_service import ConversationService, ConversationServiceError
 
 
@@ -107,7 +107,7 @@ class ChatService:
             )
             
             # Step 4: Process message through agent
-            assistant = OpenRouterAssistant()
+            assistant = GroqAssistant()
             
             try:
                 agent_result = await assistant.process_message(

@@ -32,12 +32,19 @@ class Settings(BaseSettings):
     GEMINI_MAX_TOKENS: int = 1000
     GEMINI_TEMPERATURE: float = 0.7
     
+    # Groq Configuration (Free & Fast Alternative)
+    GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_MAX_TOKENS: int = 4000
+    GROQ_TEMPERATURE: float = 0.7
+    
     # MCP Server (will be added in Phase 3)
     MCP_SERVER_PORT: Optional[int] = 8001
     
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # Allow extra fields in .env without crashing
 
 
 # Global settings instance

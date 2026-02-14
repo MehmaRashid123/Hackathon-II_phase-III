@@ -173,6 +173,7 @@ async def create_task(
         priority=task_data.priority or TaskPriority.MEDIUM,
         status=task_data.status or TaskStatus.TO_DO,
         created_by=user_uuid,  # Set created_by
+        user_id=user_uuid,  # Set user_id for compatibility
         workspace_id=None,  # Personal task - no workspace
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow()
@@ -254,7 +255,7 @@ async def update_task(
         }
     """
     # Update task via service layer (enforces ownership)
-    updated_task = TaskService.update_task(session, user_id, task_id, update_data)
+    updated_task = TaskService.update_task_simple(session, user_id, task_id, update_data)
 
     # Return updated task
     return TaskRead.model_validate(updated_task)
